@@ -1,5 +1,6 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { useQuery, useMutation } from 'convex/react'
+import { createFileRoute } from '@tanstack/react-router'
+import { useMutation, useQuery } from 'convex/react'
+import type { Id } from '../../convex/_generated/dataModel'
 import { api } from '../../convex/_generated/api'
 import { useState, useMemo } from 'react'
 
@@ -8,97 +9,62 @@ export const Route = createFileRoute('/boards/$boardId')({
 })
 
 function BoardPage() {
-  const { boardId } = Route.useParams()
-  const notes = useQuery(api.notes.listNotes, { boardId: boardId as any })
+  const { boardId } = Route.useParams() as { boardId: Id<'boards'> }
+  const notes = useQuery(api.notes.listNotes, { boardId })
   const createNote = useMutation(api.notes.createNote)
   const updateNote = useMutation(api.notes.updateNote)
 
-  const [title, setTitle] = useState('')
-  const [content, setContent] = useState('')
+  const [title, setTitle] = useState('Untitled')
+  const [content, setContent] = useState('Hello from Convex + TanStack Start!')
 
-  const sorted = useMemo(
-    () => (notes ?? []).slice().sort((a, b) => b.createdAt - a.createdAt),
-    [notes]
-  )
+  const sorted = useMemo(() => notes ?? [], [notes])
 
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Board {boardId}</h1>
-        <Link to="/" className="text-cyan-400 hover:underline">← Home</Link>
-      </div>
+      <h1 className="text-3xl font-bold text-white">Board {boardId}</h1>
 
-      <form
-        className="bg-slate-800/60 border border-slate-700 rounded-xl p-4 space-y-3"
-        onSubmit={async (e) => {
-          e.preventDefault()
-          if (!title.trim()) return
-          await createNote({ boardId: boardId as any, title, content })
-          setTitle(''); setContent('')
-        }}
-      >
+      <div className="bg-slate-800/60 p-4 rounded-xl border border-slate-700 space-y-3">
         <input
-          className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white"
-          placeholder="Note title…"
+          className="w-full rounded p-2 bg-slate-900 border border-slate-700 text-white"
+          placeholder="Note title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
         <textarea
-          className="w-full h-28 px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white"
-          placeholder="Note content…"
+          className="w-full rounded p-2 min-h-[120px] bg-slate-900 border border-slate-700 text-white"
+          placeholder="Note content"
           value={content}
           onChange={(e) => setContent(e.target.value)}
         />
         <button
-          className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded"
-          type="submit"
+          className="px-4 py-2 rounded bg-cyan-600 hover:bg-cyan-700 text-white font-semibold"
+          onClick={async () => {
+            await createNote({ boardId, title, content })
+            setTitle('Untitled')
+            setContent('')
+          }}
         >
           Add Note
         </button>
-      </form>
+      </div>
 
-      <ul className="space-y-4">
-        {sorted?.map((n) => (
-          <li key={n._id} className="bg-slate-800/60 border border-slate-700 rounded-xl p-4">
-            <div className="text-white font-semibold mb-2">{n.title}</div>
-            <Editable
-              initial={n.content}
-              onSave={async (value) => updateNote({ noteId: n._id, content: value })}
+      <ul className="space-y-3">
+        {sorted.map((n) => (
+          <li key={n._id} className="bg-slate-800/60 p-4 rounded-xl border border-slate-700">
+            <div className="text-white font-semibold">{n.title}</div>
+            <textarea
+              className="w-full mt-2 rounded p-2 min-h-[100px] bg-slate-900 border border-slate-700 text-white"
+              defaultValue={n.content}
+              onBlur={async (e) => {
+                const val = e.currentTarget.value
+                if (val !== n.content) {
+                  await updateNote({ noteId: n._id, content: val })
+                }
+              }}
             />
           </li>
         ))}
       </ul>
-    </div>
-  )
-}
-
-function Editable({
-  initial,
-  onSave,
-}: {
-  initial: string
-  onSave: (v: string) => Promise<void>
-}) {
-  const [value, setValue] = useState(initial)
-  const [saving, setSaving] = useState(false)
-
-  return (
-    <div className="space-y-2">
-      <textarea
-        className="w-full h-32 px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-      />
-      <button
-        className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded disabled:opacity-50"
-        disabled={saving}
-        onClick={async () => {
-          setSaving(true)
-          try { await onSave(value) } finally { setSaving(false) }
-        }}
-      >
-        {saving ? 'Saving…' : 'Save'}
-      </button>
     </div>
   )
 }
