@@ -1,70 +1,72 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useMutation, useQuery } from 'convex/react'
-import type { Id } from '../../convex/_generated/dataModel'
-import { api } from '../../convex/_generated/api'
-import { useState, useMemo } from 'react'
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { Id } from "../../convex/_generated/dataModel";
+import { useState } from "react";
 
-export const Route = createFileRoute('/boards/$boardId')({
+export const Route = createFileRoute("/boards/$boardId")({
   component: BoardPage,
-})
+});
 
 function BoardPage() {
-  const { boardId } = Route.useParams() as { boardId: Id<'boards'> }
-  const notes = useQuery(api.notes.listNotes, { boardId })
-  const createNote = useMutation(api.notes.createNote)
-  const updateNote = useMutation(api.notes.updateNote)
+  const { boardId } = Route.useParams();
+  const typedId = boardId as Id<"boards">;
 
-  const [title, setTitle] = useState('Untitled')
-  const [content, setContent] = useState('Hello from Convex + TanStack Start!')
+  const notes = useQuery(api.notes.listNotes, { boardId: typedId });
+  const createNote = useMutation(api.notes.createNote);
 
-  const sorted = useMemo(() => notes ?? [], [notes])
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+
+  async function onAdd() {
+    if (!title.trim()) return;
+    await createNote({ boardId: typedId, title, content });
+    setTitle("");
+    setContent("");
+  }
+
+  if (notes === undefined) return <div className="p-4">Loading…</div>;
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-6">
-      <h1 className="text-3xl font-bold text-white">Board {boardId}</h1>
+    <div className="p-6 space-y-4">
+      <h1 className="text-2xl font-bold">Board: {boardId}</h1>
 
-      <div className="bg-slate-800/60 p-4 rounded-xl border border-slate-700 space-y-3">
+      <div className="max-w-md space-y-2">
         <input
-          className="w-full rounded p-2 bg-slate-900 border border-slate-700 text-white"
+          className="w-full rounded border border-slate-600 bg-slate-800 p-2"
           placeholder="Note title"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={e => setTitle(e.target.value)}
         />
         <textarea
-          className="w-full rounded p-2 min-h-[120px] bg-slate-900 border border-slate-700 text-white"
+          className="w-full rounded border border-slate-600 bg-slate-800 p-2"
           placeholder="Note content"
+          rows={4}
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={e => setContent(e.target.value)}
         />
         <button
-          className="px-4 py-2 rounded bg-cyan-600 hover:bg-cyan-700 text-white font-semibold"
-          onClick={async () => {
-            await createNote({ boardId, title, content })
-            setTitle('Untitled')
-            setContent('')
-          }}
+          className="px-3 py-2 rounded bg-cyan-600 hover:bg-cyan-700 text-white"
+          onClick={onAdd}
         >
-          Add Note
+          Add note
         </button>
       </div>
 
-      <ul className="space-y-3">
-        {sorted.map((n) => (
-          <li key={n._id} className="bg-slate-800/60 p-4 rounded-xl border border-slate-700">
-            <div className="text-white font-semibold">{n.title}</div>
-            <textarea
-              className="w-full mt-2 rounded p-2 min-h-[100px] bg-slate-900 border border-slate-700 text-white"
-              defaultValue={n.content}
-              onBlur={async (e) => {
-                const val = e.currentTarget.value
-                if (val !== n.content) {
-                  await updateNote({ noteId: n._id, content: val })
-                }
-              }}
-            />
-          </li>
-        ))}
-      </ul>
+      {notes.length === 0 ? (
+        <p className="text-gray-500">No notes yet.</p>
+      ) : (
+        <ul className="space-y-2">
+          {notes.map(n => (
+            <li key={n._id} className="border border-slate-700 rounded p-3">
+              <h3 className="font-semibold">{n.title}</h3>
+              <p className="text-sm text-gray-300 whitespace-pre-wrap">
+                {n.content}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
-  )
+  );
 }

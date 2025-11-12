@@ -1,17 +1,18 @@
-import { defineSchema, defineTable } from 'convex/server'
-import { v } from 'convex/values'
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
 
 export default defineSchema({
   boards: defineTable({
-    title: v.string(),
-    createdAt: v.number(),
-  }).index('by_title', ['title']),
+    createdAt: v.float64(),
+    name: v.string(),
+  }),
 
   notes: defineTable({
-    boardId: v.id('boards'),
+    boardId: v.id("boards"),
     title: v.string(),
     content: v.string(),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  }).index('by_board', ['boardId']),
-})
+    createdAt: v.float64(),
+    updatedAt: v.optional(v.float64()),
+  })
+    .index("by_board", ["boardId"]),
+});

@@ -8,6 +8,9 @@
  * @module
  */
 
+import type * as boards from "../boards.js";
+import type * as notes from "../notes.js";
+
 import type {
   ApiFromModules,
   FilterApi,
@@ -22,7 +25,10 @@ import type {
  * const myFunctionReference = api.myModule.myFunction;
  * ```
  */
-declare const fullApi: ApiFromModules<{}>;
+declare const fullApi: ApiFromModules<{
+  boards: typeof boards;
+  notes: typeof notes;
+}>;
 declare const fullApiWithMounts: typeof fullApi;
 
 export declare const api: FilterApi<
