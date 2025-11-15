@@ -9,6 +9,7 @@
  */
 
 import type * as boards from "../boards.js";
+import type * as firecrawl from "../firecrawl.js";
 import type * as notes from "../notes.js";
 
 import type {
@@ -27,6 +28,7 @@ import type {
  */
 declare const fullApi: ApiFromModules<{
   boards: typeof boards;
+  firecrawl: typeof firecrawl;
   notes: typeof notes;
 }>;
 declare const fullApiWithMounts: typeof fullApi;

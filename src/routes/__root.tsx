@@ -6,6 +6,14 @@ import appCss from '../styles.css?url'
 
 import { ConvexProvider } from 'convex/react'
 import { convex } from '../lib/convex'
+import * as Sentry from '@sentry/react'
+
+if (typeof window !== 'undefined' && import.meta.env.PROD) {
+  Sentry.init({
+    dsn: import.meta.env.VITE_SENTRY_DSN ?? (import.meta as any).env?.SENTRY_DSN,
+    tracesSampleRate: 1.0,
+  })
+}
 
 export const Route = createRootRoute({
   head: () => ({
