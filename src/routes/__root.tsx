@@ -32,15 +32,25 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        {/* Turnstile script will go here later */}
+        <script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+          async
+          defer
+        ></script>
       </head>
       <body>
-        <Header />
-        {/* Wrap your app here */}
-        <ConvexProvider client={convex}>{children}</ConvexProvider>
+        <Sentry.ErrorBoundary fallback={<p>Something went wrong.</p>}>
+          <Header />
+          {/* Wrap your app here */}
+          <ConvexProvider client={convex}>{children}</ConvexProvider>
+        </Sentry.ErrorBoundary>
 
         <TanStackDevtools
           config={{ position: 'bottom-right' }}
-          plugins={[{ name: 'Tanstack Router', render: <TanStackRouterDevtoolsPanel /> }]}
+          plugins={[
+            { name: 'Tanstack Router', render: <TanStackRouterDevtoolsPanel /> },
+          ]}
         />
         <Scripts />
       </body>

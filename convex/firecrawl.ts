@@ -1,30 +1,43 @@
-import { action } from "./_generated/server";
-import { v } from "convex/values";
-import { api } from "./_generated/api";
+import { action } from './_generated/server'
+import { v } from 'convex/values'
+import { api } from './_generated/api'
 
 export const scrapeAndCreateNote = action({
   args: {
-    boardId: v.id("boards"),
+    boardId: v.id('boards'),
     url: v.string(),
+    turnstileToken: v.string(),
   },
-  handler: async (ctx, { boardId, url }) => {
-    const res = await fetch("https://api.firecrawl.dev/v1/scrape", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.FIRECRAWL_API_KEY}`,
-      },
-      body: JSON.stringify({ url, formats: ["markdown"] }),
-    });
+  handler: async (ctx, { boardId, url, turnstileToken }) => {
+    const secret = process.env.TURNSTILE_SECRET_KEY
+    if (!secret) {
+      throw new Error('TURNSTILE_SECRET_KEY not set')
+    }
 
-    if (!res.ok) throw new Error("Firecrawl failed");
-    const data = await res.json();
-    const markdown: string = data.markdown ?? "No content";
+    // 1) Verify Turnstile
+    const verifyRes = await fetch(
+      'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+      {
+        method: 'POST',
+        body: new URLSearchParams({
+          secret,
+          response: turnstileToken,
+        }),
+      }
+    )
+
+    const verifyData = await verifyRes.json()
+    if (!verifyData.success) {
+      throw new Error('Turnstile verification failed')
+    }
+
+    // 2) Call your existing createNote mutation
+    const content = `Captured from ${url} at ${new Date().toISOString()}`
 
     await ctx.runMutation(api.notes.createNote, {
       boardId,
-      title: `Captured: ${url}`,
-      content: markdown,
-    });
+      title: url,
+      content,
+    })
   },
-});
+})
