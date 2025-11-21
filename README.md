@@ -23,5 +23,5 @@ Each board is a workspace of notes that can be added manually or scraped from th
 
 ```bash
 git clone https://github.com/aseansingh/startflow.git
-cd <your-repo>
+cd startflow
 npm install
